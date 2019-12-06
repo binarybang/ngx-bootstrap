@@ -30,6 +30,7 @@ import {
 import { ContentRef } from './content-ref.class';
 import { ListenOptions } from './listen-options.model';
 import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 export class ComponentLoader<T> {
   onBeforeShow: EventEmitter<void> = new EventEmitter();
@@ -209,6 +210,8 @@ export class ComponentLoader<T> {
   }
 
   hide(): ComponentLoader<T> {
+    this._unsubscribePositioning();
+
     if (!this._componentRef) {
       return this;
     }
@@ -351,13 +354,15 @@ export class ComponentLoader<T> {
       });
     });
 
-    this._zoneSubscription = this._ngZone.onStable.subscribe(() => {
-      if (!this._componentRef) {
-        return;
-      }
+    this._zoneSubscription = this._ngZone.onStable
+      .pipe(take(1))
+      .subscribe(() => {
+        if (!this._componentRef) {
+          return;
+        }
 
-      this._posService.calcPosition();
-    });
+        this._posService.calcPosition();
+      });
   }
 
   private _unsubscribePositioning(): void {
